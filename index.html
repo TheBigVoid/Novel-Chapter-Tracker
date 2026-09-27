@@ -8,41 +8,79 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="top">
-    <div class="wrap">
-      <input id="novel-title" class="novel-title" aria-label="Novel title" placeholder="Untitled novel" maxlength="120">
-      <p class="subtitle">Track which chapters are drafted, in revision, scheduled, or published.</p>
-    </div>
-  </header>
-
   <main class="wrap">
-    <section class="stats" id="stats" aria-label="Summary"></section>
-
-    <div class="progress" aria-hidden="true"><div class="progress-bar" id="progress-bar"></div></div>
-
-    <section class="toolbar">
-      <div class="filters" role="tablist" aria-label="Filter by status" id="filters"></div>
-      <div class="toolbar-right">
-        <input type="search" id="search" placeholder="Search chapters…" aria-label="Search chapters">
-        <button class="btn primary" id="add-btn" type="button">+ Add chapter</button>
-      </div>
+    <!-- Library: every novel as a card on a shelf -->
+    <section id="library-view" hidden>
+      <header class="page-head">
+        <div>
+          <h1 class="page-title">My Novels</h1>
+          <p class="subtitle">Track which chapters are outlined, drafted, scheduled, or published, for every book.</p>
+        </div>
+        <button class="btn primary" id="new-novel-btn" type="button">+ New novel</button>
+      </header>
+      <section class="stats" id="library-stats" aria-label="Library summary"></section>
+      <section class="shelf" id="shelf" aria-label="Novels"></section>
     </section>
 
-    <section id="list" class="list" aria-live="polite"></section>
+    <!-- A single novel and its chapters -->
+    <section id="novel-view" hidden>
+      <a href="#/" class="back">← All novels</a>
 
-    <footer class="data-tools">
-      <span class="muted">Saved in this browser. Export a backup to move it to another device.</span>
-      <div class="data-buttons">
-        <button class="btn" id="export-btn" type="button">Export JSON</button>
-        <label class="btn" for="import-file">Import JSON</label>
-        <input type="file" id="import-file" accept="application/json,.json" hidden>
+      <header class="novel-hero">
+        <button class="hero-cover" id="hero-cover" type="button" title="Change cover and details"></button>
+        <div class="hero-body">
+          <div class="hero-kicker" id="hero-kicker"></div>
+          <h1 class="page-title" id="hero-title"></h1>
+          <p class="hero-author" id="hero-author"></p>
+          <p class="hero-synopsis" id="hero-synopsis"></p>
+          <p class="next-release" id="next-release"></p>
+          <div class="hero-actions">
+            <button class="btn" id="edit-novel-btn" type="button">Edit details</button>
+            <button class="btn" id="export-novel-btn" type="button">Export this novel</button>
+          </div>
+        </div>
+      </header>
+
+      <section class="status-tiles" id="status-tiles" role="tablist" aria-label="Filter by status"></section>
+
+      <div class="progress-block">
+        <div class="progress" id="progress" aria-hidden="true"></div>
+        <p class="progress-caption" id="progress-caption"></p>
       </div>
-    </footer>
+
+      <section class="toolbar">
+        <input type="search" id="search" placeholder="Search chapters…" aria-label="Search chapters">
+        <select id="sort" aria-label="Sort chapters"></select>
+        <button class="btn" id="bulk-btn" type="button">Add several</button>
+        <button class="btn primary" id="add-btn" type="button">+ Add chapter</button>
+      </section>
+
+      <section id="list" class="list" aria-live="polite"></section>
+    </section>
   </main>
 
+  <footer class="wrap app-footer">
+    <div class="footer-left">
+      <label class="theme-pick">Theme
+        <select id="theme-select">
+          <option value="system">Match system</option>
+          <option value="light">Light</option>
+          <option value="dark">Dark</option>
+        </select>
+      </label>
+      <span class="muted" id="storage-info"></span>
+    </div>
+    <div class="data-buttons">
+      <button class="btn" id="export-btn" type="button">Export all</button>
+      <label class="btn" for="import-file">Import</label>
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </div>
+  </footer>
+
+  <!-- Chapter add / edit -->
   <dialog id="chapter-dialog">
     <form id="chapter-form" method="dialog">
-      <h2 id="dialog-title">Add chapter</h2>
+      <h2 id="chapter-dialog-title">Add chapter</h2>
       <div class="grid">
         <label>Chapter #
           <input name="number" type="number" min="0" step="1" required>
@@ -56,8 +94,9 @@
         <label>Word count
           <input name="words" type="number" min="0" step="1" placeholder="0">
         </label>
-        <label>Publish date
+        <label>Date
           <input name="date" type="date">
+          <span class="hint">Published, scheduled, or planned date</span>
         </label>
         <label class="span-2">Link
           <input name="link" type="url" placeholder="https://… (where it's published)">
@@ -66,15 +105,107 @@
           <textarea name="notes" rows="3" placeholder="Anything to remember about this chapter"></textarea>
         </label>
       </div>
-      <p class="form-error" id="form-error" role="alert"></p>
+      <p class="form-error" id="chapter-form-error" role="alert"></p>
       <div class="dialog-actions">
-        <button class="btn danger" type="button" id="delete-btn">Delete</button>
+        <button class="btn danger" type="button" id="chapter-delete-btn">Delete</button>
         <span class="spacer"></span>
-        <button class="btn" type="button" id="cancel-btn">Cancel</button>
+        <button class="btn" type="button" data-close>Cancel</button>
         <button class="btn primary" type="submit">Save</button>
       </div>
     </form>
   </dialog>
+
+  <!-- Novel add / edit -->
+  <dialog id="novel-dialog" class="wide">
+    <form id="novel-form" method="dialog">
+      <h2 id="novel-dialog-title">New novel</h2>
+      <div class="novel-form-layout">
+        <div class="cover-editor">
+          <div id="cover-preview" class="cover-preview"></div>
+          <label class="btn small" for="cover-file">Upload cover</label>
+          <input type="file" id="cover-file" accept="image/*" hidden>
+          <button class="btn small" type="button" id="cover-remove">Remove cover</button>
+          <p class="hint">Any image. It's cropped to 2:3 and shrunk so it fits in browser storage.</p>
+        </div>
+        <div class="grid">
+          <label class="span-2">Title
+            <input name="title" type="text" maxlength="200" required>
+          </label>
+          <label class="span-2">Author / pen name
+            <input name="author" type="text" maxlength="120">
+          </label>
+          <label>Genre
+            <input name="genre" type="text" maxlength="80" placeholder="e.g. Fantasy">
+          </label>
+          <label>Status
+            <select name="status"></select>
+          </label>
+          <label>Platform
+            <input name="platform" type="text" maxlength="80" list="platforms" placeholder="e.g. Royal Road">
+          </label>
+          <label>Release schedule
+            <input name="schedule" type="text" maxlength="80" placeholder="e.g. Mon & Thu">
+          </label>
+          <label>Target chapters
+            <input name="targetChapters" type="number" min="1" step="1" placeholder="Optional">
+          </label>
+          <label>Words per chapter goal
+            <input name="wordGoal" type="number" min="1" step="1" placeholder="Optional">
+          </label>
+          <label class="span-2">Synopsis
+            <textarea name="synopsis" rows="4" placeholder="A short blurb for your own reference"></textarea>
+          </label>
+        </div>
+      </div>
+      <p class="form-error" id="novel-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <button class="btn danger" type="button" id="novel-delete-btn">Delete novel</button>
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Bulk add -->
+  <dialog id="bulk-dialog">
+    <form id="bulk-form" method="dialog">
+      <h2>Add several chapters</h2>
+      <p class="hint">Creates a chapter for every number in the range. Numbers that already exist are skipped.</p>
+      <div class="grid">
+        <label>From chapter
+          <input name="from" type="number" min="0" step="1" required>
+        </label>
+        <label>To chapter
+          <input name="to" type="number" min="0" step="1" required>
+        </label>
+        <label class="span-2">Status
+          <select name="status"></select>
+        </label>
+      </div>
+      <p class="form-error" id="bulk-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn primary" type="submit">Add chapters</button>
+      </div>
+    </form>
+  </dialog>
+
+  <datalist id="platforms">
+    <option value="Royal Road">
+    <option value="Wattpad">
+    <option value="Webnovel">
+    <option value="Scribble Hub">
+    <option value="AO3">
+    <option value="Tapas">
+    <option value="Patreon">
+    <option value="Substack">
+    <option value="Kindle Vella">
+    <option value="Personal website">
+  </datalist>
+
+  <div class="toast" id="toast" role="status" hidden></div>
 
   <script src="app.js"></script>
 </body>

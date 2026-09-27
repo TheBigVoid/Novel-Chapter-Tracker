@@ -1,22 +1,36 @@
 # Novel Chapter Tracker
 
-A small, no-install web page for keeping track of which chapters of your novel are drafted and which are published.
+A small, no-install web page for keeping track of which chapters of your novels are outlined, drafted, scheduled, and published.
 
 ## Features
 
-- **Statuses:** Draft → Revising → Scheduled → Published. Each chapter has a one-click button to move it to the next status.
-- **Chapter details:** number, title, word count, publish date, a link to where it's posted, and notes.
-- **Overview:** a count for each status, total words written vs. published, and a progress bar.
-- **Filter and search:** show only drafts or only published chapters, or search by number, title or notes.
-- **Backups:** export everything to a JSON file and import it again, for example to move to another computer.
+### Library
+- Keep as many novels as you like on one shelf, each with its **cover**. Upload any image; it's cropped to 2:3 and shrunk automatically. Novels without a cover get a coloured placeholder with the title.
+- Each novel card shows how many chapters are published, a progress bar, its status (Planning, Ongoing, On hiatus, Completed), and the next release or anything overdue.
+- Totals across all novels: chapters published, chapters in progress, words written.
 
-Marking a chapter **Published** fills in today's date if no date is set.
+### Novel details
+- Title, author / pen name, genre, platform, release schedule, and synopsis.
+- **Target chapters:** the progress bar shows how far you are towards the planned total.
+- **Words-per-chapter goal:** unpublished chapters show a mini progress bar towards it.
+- **Next release:** shows the next scheduled chapter and date, and warns about scheduled chapters whose date has passed.
+
+### Chapters
+- **Statuses:** Outline → Draft → Revising → Scheduled → Published. Each chapter has a one-click button to move it to the next status. Marking one Published fills in today's date if none is set.
+- Number, title, word count, date, a link to where it's posted, and notes.
+- Click a status tile to show only chapters in that status. Search by number, title or notes. Sort by chapter number, status, date, or most recently edited.
+- **Add several:** create a whole range of chapters at once (e.g. 1–30 as Outline).
+
+### Other
+- Light, dark, or match-your-system theme.
+- **Export all** or **Export this novel** to a JSON file, and **Import** to bring novels back or move them to another device. An imported novel that's already in the library replaces the old copy; other novels are added.
+- Data saved by the earlier single-novel version is converted automatically.
 
 ## Using it
 
 Open `index.html` in any browser. There's nothing to build or install.
 
-Your chapters are saved in that browser's local storage, so they stay put between visits on the same device and browser. Use **Export JSON** now and then as a backup. Clearing your browser data will erase them.
+Everything is saved in that browser's local storage, so it stays put between visits on the same device and browser. Export a backup now and then; clearing your browser data erases it. Browsers allow roughly 5 MB per site. A cover takes about 10–60 KB, so that's plenty for dozens of novels. The footer shows how much you're using.
 
 ### Hosting it online (optional)
 
@@ -24,6 +38,6 @@ To use it from any device, turn on GitHub Pages: go to **Settings → Pages**, c
 
 ## Files
 
-- `index.html` – page structure
-- `styles.css` – styling (follows your system's light/dark mode)
+- `index.html` – page structure and dialogs
+- `styles.css` – styling (light and dark)
 - `app.js` – all the logic and storage
