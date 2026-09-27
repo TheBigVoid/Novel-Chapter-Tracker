@@ -9,7 +9,7 @@
 </head>
 <body>
   <main class="wrap">
-    <!-- Library: every novel as a card on a shelf -->
+    <!-- Library: every novel, plus a calendar and writing log across all of them -->
     <section id="library-view" hidden>
       <header class="page-head">
         <div>
@@ -19,43 +19,56 @@
         <button class="btn primary" id="new-novel-btn" type="button">+ New novel</button>
       </header>
       <section class="stats" id="library-stats" aria-label="Library summary"></section>
+      <nav class="tabs" id="library-tabs" role="tablist" aria-label="Library sections"></nav>
       <section class="shelf" id="shelf" aria-label="Novels"></section>
+      <section id="library-calendar" class="calendar-host"></section>
+      <section id="library-writing"></section>
     </section>
 
-    <!-- A single novel and its chapters -->
+    <!-- A single novel -->
     <section id="novel-view" hidden>
       <a href="#/" class="back">← All novels</a>
 
       <header class="novel-hero">
-        <button class="hero-cover" id="hero-cover" type="button" title="Change cover and details"></button>
+        <button class="hero-cover" id="hero-cover" type="button" title="Change cover and details (or drop an image here)"></button>
         <div class="hero-body">
           <div class="hero-kicker" id="hero-kicker"></div>
           <h1 class="page-title" id="hero-title"></h1>
           <p class="hero-author" id="hero-author"></p>
           <p class="hero-synopsis" id="hero-synopsis"></p>
           <p class="next-release" id="next-release"></p>
+          <p class="buffer-line" id="buffer-line"></p>
           <div class="hero-actions">
             <button class="btn" id="edit-novel-btn" type="button">Edit details</button>
-            <button class="btn" id="export-novel-btn" type="button">Export this novel</button>
+            <button class="btn" id="arcs-btn" type="button">Arcs &amp; volumes</button>
+            <button class="btn" id="md-import-btn" type="button">Import from Obsidian / Markdown</button>
+            <button class="btn" id="export-novel-btn" type="button">Export JSON</button>
+            <button class="btn" id="export-novel-csv-btn" type="button">Export CSV</button>
           </div>
         </div>
       </header>
-
-      <section class="status-tiles" id="status-tiles" role="tablist" aria-label="Filter by status"></section>
 
       <div class="progress-block">
         <div class="progress" id="progress" aria-hidden="true"></div>
         <p class="progress-caption" id="progress-caption"></p>
       </div>
 
-      <section class="toolbar">
-        <input type="search" id="search" placeholder="Search chapters…" aria-label="Search chapters">
-        <select id="sort" aria-label="Sort chapters"></select>
-        <button class="btn" id="bulk-btn" type="button">Add several</button>
-        <button class="btn primary" id="add-btn" type="button">+ Add chapter</button>
-      </section>
+      <nav class="tabs" id="novel-tabs" role="tablist" aria-label="Novel sections"></nav>
 
-      <section id="list" class="list" aria-live="polite"></section>
+      <section id="novel-chapters">
+        <section class="status-tiles" id="status-tiles" aria-label="Filter by status"></section>
+        <section class="toolbar">
+          <input type="search" id="search" placeholder="Search chapters…" aria-label="Search chapters">
+          <select id="arc-filter" aria-label="Filter by arc"></select>
+          <select id="tag-filter" aria-label="Filter by tag"></select>
+          <select id="sort" aria-label="Sort chapters"></select>
+          <button class="btn" id="bulk-btn" type="button">Add several</button>
+          <button class="btn primary" id="add-btn" type="button">+ Add chapter</button>
+        </section>
+        <section id="list" class="list" aria-live="polite"></section>
+      </section>
+      <section id="novel-calendar" class="calendar-host"></section>
+      <section id="novel-writing"></section>
     </section>
   </main>
 
@@ -71,8 +84,9 @@
       <span class="muted" id="storage-info"></span>
     </div>
     <div class="data-buttons">
-      <button class="btn" id="export-btn" type="button">Export all</button>
-      <label class="btn" for="import-file">Import</label>
+      <button class="btn" id="export-btn" type="button">Export all (JSON)</button>
+      <button class="btn" id="export-csv-btn" type="button">Export all (CSV)</button>
+      <label class="btn" for="import-file">Import JSON</label>
       <input type="file" id="import-file" accept="application/json,.json" hidden>
     </div>
   </footer>
@@ -91,6 +105,9 @@
         <label class="span-2">Title
           <input name="title" type="text" maxlength="200" placeholder="Optional">
         </label>
+        <label class="span-2" id="chapter-arc-field">Arc / volume
+          <select name="arcId"></select>
+        </label>
         <label>Word count
           <input name="words" type="number" min="0" step="1" placeholder="0">
         </label>
@@ -98,6 +115,11 @@
           <input name="date" type="date">
           <span class="hint">Published, scheduled, or planned date</span>
         </label>
+        <div class="span-2 field">
+          <label for="chapter-tags">Tags</label>
+          <input id="chapter-tags" name="tags" type="text" maxlength="300" placeholder="Comma-separated, e.g. flashback, needs beta read">
+          <div class="tag-suggest" id="tag-suggest"></div>
+        </div>
         <label class="span-2">Link
           <input name="link" type="url" placeholder="https://… (where it's published)">
         </label>
@@ -121,11 +143,11 @@
       <h2 id="novel-dialog-title">New novel</h2>
       <div class="novel-form-layout">
         <div class="cover-editor">
-          <div id="cover-preview" class="cover-preview"></div>
+          <div id="cover-preview" class="cover-preview drop-target" title="Drop an image here"></div>
           <label class="btn small" for="cover-file">Upload cover</label>
           <input type="file" id="cover-file" accept="image/*" hidden>
           <button class="btn small" type="button" id="cover-remove">Remove cover</button>
-          <p class="hint">Any image. It's cropped to 2:3 and shrunk so it fits in browser storage.</p>
+          <p class="hint">Upload, drag an image onto the cover, or paste one (Ctrl/⌘+V). It's cropped to 2:3 and shrunk to fit in browser storage.</p>
         </div>
         <div class="grid">
           <label class="span-2">Title
@@ -140,12 +162,14 @@
           <label>Status
             <select name="status"></select>
           </label>
-          <label>Platform
+          <label class="span-2">Platform
             <input name="platform" type="text" maxlength="80" list="platforms" placeholder="e.g. Royal Road">
           </label>
-          <label>Release schedule
-            <input name="schedule" type="text" maxlength="80" placeholder="e.g. Mon & Thu">
-          </label>
+          <fieldset class="span-2 days-field">
+            <legend>Release days</legend>
+            <div class="days" id="release-days"></div>
+            <span class="hint">Used for the calendar and to work out how long your buffer lasts.</span>
+          </fieldset>
           <label>Target chapters
             <input name="targetChapters" type="number" min="1" step="1" placeholder="Optional">
           </label>
@@ -179,8 +203,11 @@
         <label>To chapter
           <input name="to" type="number" min="0" step="1" required>
         </label>
-        <label class="span-2">Status
+        <label>Status
           <select name="status"></select>
+        </label>
+        <label id="bulk-arc-field">Arc / volume
+          <select name="arcId"></select>
         </label>
       </div>
       <p class="form-error" id="bulk-form-error" role="alert"></p>
@@ -188,6 +215,59 @@
         <span class="spacer"></span>
         <button class="btn" type="button" data-close>Cancel</button>
         <button class="btn primary" type="submit">Add chapters</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Arcs / volumes -->
+  <dialog id="arcs-dialog">
+    <form id="arcs-form" method="dialog">
+      <h2>Arcs &amp; volumes</h2>
+      <p class="hint">Group chapters into arcs, volumes, books or parts. They're listed in this order.</p>
+      <ol class="arc-list" id="arc-list"></ol>
+      <button class="btn small" type="button" id="arc-add">+ Add arc</button>
+      <p class="form-error" id="arcs-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Markdown / Obsidian import -->
+  <dialog id="md-dialog" class="wide">
+    <form id="md-form" method="dialog">
+      <h2>Import chapters from Obsidian / Markdown</h2>
+      <p class="hint">
+        Pick your chapter notes (.md or .txt). Each file becomes a chapter: the number and title come from
+        front matter or the file name, and words are counted like Obsidian does. Front-matter fields such as
+        <code>chapter</code>, <code>title</code>, <code>status</code>, <code>tags</code>, <code>arc</code> and
+        <code>published</code> are used when present. Import again any time to refresh word counts.
+      </p>
+      <div class="drop-zone drop-target" id="md-drop">
+        <span>Drop Markdown files or a whole folder here, or</span>
+        <span class="drop-buttons">
+          <label class="btn small" for="md-files">Choose files</label>
+          <label class="btn small" for="md-folder">Choose folder</label>
+        </span>
+        <input type="file" id="md-files" multiple accept=".md,.markdown,.txt,text/markdown,text/plain" hidden>
+        <input type="file" id="md-folder" webkitdirectory multiple hidden>
+      </div>
+      <div class="import-options">
+        <label>Status for notes without one
+          <select name="defaultStatus"></select>
+        </label>
+        <label class="check"><input type="checkbox" name="folderArcs" checked> Use subfolder names as arcs</label>
+        <label class="check"><input type="checkbox" name="updateExisting" checked> Update chapters that are already here</label>
+        <label class="check"><input type="checkbox" name="logWords"> Add word-count increases to today's writing log</label>
+      </div>
+      <div class="import-preview" id="md-preview"></div>
+      <p class="form-error" id="md-form-error" role="alert"></p>
+      <div class="dialog-actions">
+        <span class="spacer"></span>
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn primary" type="submit" id="md-submit" disabled>Import</button>
       </div>
     </form>
   </dialog>
@@ -206,7 +286,9 @@
   </datalist>
 
   <div class="toast" id="toast" role="status" hidden></div>
+  <div class="chart-tip" id="chart-tip" role="presentation" hidden></div>
 
+  <script src="markdown-import.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
